@@ -14,7 +14,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   PusherClient pusher;
-  Channel channel;
+  Channel privateChurchChannel, presenceChurchChannel;
 
   List<dynamic> pushData = [];
 
@@ -32,7 +32,7 @@ class _MyAppState extends State<MyApp> {
         // host: 'localhost',
         // encrypted: false,
         auth: PusherAuth(
-          'https://138977fb5eb7.ngrok.io/broadcasting/auth',
+          'https://56a527cd47fd.ngrok.io/auth',
           headers: {
             'Authorization': 'Bearer $token',
           },
@@ -40,8 +40,6 @@ class _MyAppState extends State<MyApp> {
       ),
       enableLogging: true,
     );
-
-    channel = pusher.subscribe("private-orders");
 
     pusher.onConnectionStateChange((state) {
       log("previousState: ${state.previousState}, currentState: ${state.currentState}");
@@ -51,23 +49,40 @@ class _MyAppState extends State<MyApp> {
       log("error: ${error.message}");
     });
 
-    channel.bind('my-event', (event) {
-      log(event.data);
-      setState(() {
-        pushData += [event.data];
+    privateChurchChannel = pusher.subscribe("private-church.1000002");
+
+    privateChurchChannel.bind('pusher:subscription_succeeded', (event) {
+      log("subscription_suceeded ${event.data}");
+      privateChurchChannel.bind('TestimonyApproved', (event) {
+        log(event.data);
+        setState(() {
+          pushData += [event.data];
+        });
+      });
+
+      //two clients talking to each other
+      privateChurchChannel.bind("client-private-church.1000002", (event) {
+        log("private client-typing-private-channel-example ${event.data}");
       });
     });
 
-    channel.bind('client-my-event', (event) {
-      log(event.data);
-      setState(() {
-        pushData += [event.data];
-      });
+    privateChurchChannel.bind('pusher:subscription_error', (error) {
+      log("subscription_error ${error.data}");
     });
 
-    // channel.bind('order-filled', (event) {
-    //   log("Order Filled Event" + event.data.toString());
-    // });
+    //presence
+    presenceChurchChannel = pusher.subscribe("presence-channel-example");
+
+    presenceChurchChannel.bind('pusher:subscription_succeeded', (event) {
+      log("presence subscription_suceeded ${event.data}");
+      presenceChurchChannel.bind("pusher:member_added", (PusherEvent event) {
+        log("presence member_added ${event.data}");
+      });
+
+      presenceChurchChannel.bind("pusher:member_removed", (PusherEvent event) {
+        log("presence member_removed ${event.data}");
+      });
+    });
   }
 
   String getToken() => "369693a4e8a1595d7091";
@@ -112,7 +127,7 @@ class _MyAppState extends State<MyApp> {
               RaisedButton(
                 child: Text('Trigger Client Typing'),
                 onPressed: () {
-                  channel.trigger('my-event', {'name': 'Bob'});
+                  privateChurchChannel.trigger('my-event', {'name': 'Bob'});
                 },
               ),
               for (var data in pushData) Text("$data"),
