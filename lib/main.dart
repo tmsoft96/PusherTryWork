@@ -32,7 +32,7 @@ class _MyAppState extends State<MyApp> {
         // host: 'localhost',
         // encrypted: false,
         auth: PusherAuth(
-          'https://56a527cd47fd.ngrok.io/auth',
+          'https://58820768c6d2.ngrok.io/auth',
           headers: {
             'Authorization': 'Bearer $token',
           },
@@ -74,13 +74,13 @@ class _MyAppState extends State<MyApp> {
     presenceChurchChannel = pusher.subscribe("presence-channel-example");
 
     presenceChurchChannel.bind('pusher:subscription_succeeded', (event) {
-      log("presence subscription_suceeded ${event.data}");
+      log("presence subscription_suceeded ${event.toJson()}");
       presenceChurchChannel.bind("pusher:member_added", (PusherEvent event) {
-        log("presence member_added ${event.data}");
+        log("presence member_added ${event.toJson()}");
       });
 
       presenceChurchChannel.bind("pusher:member_removed", (PusherEvent event) {
-        log("presence member_removed ${event.data}");
+        log("presence member_removed ${event.toJson()}");
       });
     });
   }
